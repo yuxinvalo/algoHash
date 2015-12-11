@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-std=c99 -Wall -Wextra tp6.c -lm -O2 -o tp6
-NUM=5
+NUM=7
 
 all:
 	$(CC) $(CFLAGS)
