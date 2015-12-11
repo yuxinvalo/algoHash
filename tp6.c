@@ -67,7 +67,10 @@ struct keyval* ht_find_or_put(char* word, unsigned value,
 	while (tmp_node != NULL)
 	{
 		if (strcmp(word, tmp_node->key) == 0)
-			tmp_node->val = value;				
+		{
+			tmp_node->val = value;
+			return tmp_node;
+		}				
 		tmp_node = tmp_node->next;
 	} 
 
@@ -78,7 +81,8 @@ struct keyval* ht_find_or_put(char* word, unsigned value,
 	bucket->next = NULL;
 	
 	if (org_node != NULL)
-		bucket->next = org_node;				
+		bucket = org_node;
+		bucket->next = tmp_node;				
 	hashtable->table[index] = bucket;
 	return bucket;
 }
@@ -163,7 +167,6 @@ printf("%u\n", bad_hash("foobar"));
 #endif
 
 /*test for ht_print------------------------------------*/
-#if 0
 struct ht* table = ht_malloc(10);
 ht_find_or_put("foo", 1,  table, bad_hash);
 ht_find_or_put("bar", 42, table, bad_hash);
@@ -183,7 +186,6 @@ printf("------------ Dump table ------------\n");
 ht_print(stdout, table);
 
 ht_free(table);
-#endif
 
 /*test for compute_histogram------------------*/
 #if 0
