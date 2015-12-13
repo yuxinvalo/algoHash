@@ -125,7 +125,8 @@ struct keyval* ht_find_or_put(char* word, unsigned value,
 				{  
 							
 								hashtable->table[index] = bucket;    
-				}                                         
+				}          
+	return bucket;                               
 }
 
 
@@ -166,26 +167,23 @@ unsigned fvn_hash(char* word)
 
 unsigned nb_collisions(struct ht* hashtable)
 {
-				int nb = 0;
-				int tmp = 0;
-				for (unsigned i = 0; i < hashtable->size; ++i)
-				{
-								if (hashtable->table[i] != NULL)
-								{
-
-												struct keyval* t = hashtable->table[i];
-
-												while (t != NULL)
-												{ 
-																t = t->next;
-																tmp ++;
-												}
-								}
-								if (tmp > nb)
-												nb = tmp;
-								tmp = 0;
+	unsigned nb = 0;
+	unsigned tmp = 0;
+	for (unsigned i = 0; i < hashtable->size; ++i)
+	{
+		if (hashtable->table[i] != NULL)
+		{
+			struct keyval* t = hashtable->table[i];
+				while (t != NULL)
+				{ 
+					t = t->next;
+					tmp ++;
 				}
-
+		}
+		if (tmp >= nb)
+		  nb = tmp;
+		tmp = 0;
+		}
 				return nb;
 }
 
@@ -195,10 +193,17 @@ struct ht* compute_histogram(char** words, unsigned words_size,
 								unsigned ht_size, unsigned (*hash)(char*))
 {
 				struct ht* table = ht_malloc(ht_size);
+        unsigned count = 0;
 
 				for (unsigned int i = 0; words[i]; ++i)
 				{
-								ht_find_or_put(words[i], 1, table, hash);
+					for (unsigned j = 0; j < words_size; j++)
+					{
+						if (strcmp(words[i], words[j]) == 0)
+							count++;			
+					}
+					ht_find_or_put(words[i], count, table, hash);
+					count = 0;
 				}
 
 				return table;
@@ -214,16 +219,76 @@ unsigned xor_hash(char* word)
 
 unsigned xor_add_hash(char* word)
 {
-				unsigned h = 0;
-				unsigned sum = 0;
-				while (*(word++))
+				unsigned h =0;
+				unsigned i = 0;
+				while (word[i] != '\0')
 				{
-								h ^= bad_hash(word);
-								sum += h; 
+								h ^= word[i];
+								h += word[i];
+								word[i++];
 				}
-				return sum;	
+				return h;	
 }
 
+unsigned djb_hash(char* word)
+{
+				unsigned h =0;
+				unsigned i = 0;
+				while (word[i] != '\0')
+				{
+								h *= 33;
+								h += word[i++];
+				}
+				return h;	
+}
+
+/*a segmentation fault but the test file pass, its wierd...*/
+int find_empty_bucket(struct ht* hashtable)
+{
+	struct ht* tmp = hashtable;
+	for (unsigned i = 0; i < hashtable->size; i++)
+	{
+		if (tmp->table[i] == NULL)
+			return 	i;
+	}	
+	return -1;
+}
+
+#if 0 
+**I dont understand
+struct keyval* ht_find_or_put2(char* word, unsigned value,
+                               struct ht* hashtable,
+															 unsigned (*hash)(char*))
+{
+	//unsigned index = hash(word)%hashtable->size;
+	int is_vide = find_empty_bucket(hashtable);
+  if (is_vide != -1)
+	{
+	  return ht_find_or_put(word, value, hashtable, hash);				
+	}
+	else //is_vide == -1
+	{
+		struct ht* new = ht_malloc(hashtable->size);		
+			
+	}
+	
+	/*
+	for (unsigned i = 0; i < hashtable->size; ++i)
+	{
+	   struct ht* tmp = compte_histogram(hashtable->table, 
+		                  hashtable->size, i, hash);
+		 unsigned nb_coli = nb_collisions(tmp);
+
+		 				
+  }	*/			
+}
+
+void ht_free2(struct ht* table)
+{
+				
+}
+
+#endif
 int main()
 {
 				/*test for display words-------------------------------*/
@@ -267,21 +332,22 @@ int main()
 								"oorabf", "foo"};
 				struct ht* table = compute_histogram(words, 8, 100, bad_hash);
 				ht_print(stdout, table);
+#endif 
 
 				/*test for xor_hash and add xor hash and djb_hash*/
 #if 0
 				printf("%s : %u\n", "foo", xor_add_hash("foo"));
 				printf("%s : %u\n", "ofo", xor_add_hash("ofo"));
 				printf("%s : %u\n", "bar", xor_add_hash("bar"));
-				printf("%s : %u\n", "foobar", xor_add_hash("foobar"));*/
+				printf("%s : %u\n", "foobar", xor_add_hash("foobar"));
 
-								printf("%s : %u\n", "foo", djb_hash("foo"));
+				printf("%s : %u\n", "foo", djb_hash("foo"));
 				printf("%s : %u\n", "ofo", djb_hash("ofo"));
 				printf("%s : %u\n", "bar", djb_hash("bar"));
 				printf("%s : %u\n", "foobar", djb_hash("foobar"));
 #endif
-
-
+#if 0
+/*test for nb_collision*/
 				char* words[] = {"foo", "oof", "bar", "rab", "foorab", "barfoo",
 				                 "oorabf", "foo"};
 				struct ht* table;
@@ -294,6 +360,13 @@ int main()
 				printf("nbcol : %d\n", nb_collisions(table));
 				ht_free(table);
 #endif
+
+/*test for find empty bucket*/
+struct ht* mht = ht_malloc(1);
+printf("%d\n", find_empty_bucket(mht));
+ht_find_or_put("hello", 0, mht, bad_hash);
+printf("%d\n", find_empty_bucket(mht));
+
 				return 0;
 }
 
